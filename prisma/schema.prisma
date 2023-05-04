@@ -41,6 +41,12 @@ model Review {
   updatedAt DateTime @updatedAt
 }
 
+model Reset {
+  id Int @id @default(autoincrement())
+  email String
+  token String
+}
+
 enum Role {
   ADMIN
   BASIC

@@ -1,26 +1,41 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-// import dotenv from "dotenv";
-const express_1 = __importDefault(require("express"));
-const morgan_1 = __importDefault(require("morgan"));
-const cors_1 = __importDefault(require("cors"));
-const express_2 = require("graphql-http/lib/use/express");
-// const dotenv = require("dotenv").config();
-// const express = require("express");
-// const morgan = require("morgan");
-// const cors = require("cors");
-const { graphql } = require("graphql");
-// const { createHandler } = require("graphql-http/lib/use/express");
-const schema_1 = __importDefault(require("./schema"));
-const resolvers_1 = require("./resolvers");
-const app = (0, express_1.default)();
-app.use((0, morgan_1.default)(":method :url :status :response-time ms - :res[content-length]"));
-app.use((0, cors_1.default)());
-app.use("/graphql", (0, express_2.createHandler)({ schema: schema_1.default, rootValue: resolvers_1.hello }));
-app.listen(3003, () => {
-    console.log("Listening on port number 3003");
+import dotenv from "dotenv";
+dotenv.config();
+import express from "express";
+import morgan from "morgan";
+import cors from "cors";
+import { typeDefs } from "./schema/schema.js";
+import resolvers from "./resolver/combined.js";
+import { ApolloServer } from "@apollo/server";
+import { expressMiddleware } from "@apollo/server/express4";
+import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
+import http from "http";
+import bodyParser from "body-parser";
+const app = express();
+const httpServer = http.createServer(app);
+app.use(morgan(":method :url :status :response-time ms - :res[content-length]"));
+app.use(cors());
+app.use(express.json());
+app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "OPTIONS,GET,PUT,POST,DELETE");
+    res.setHeader("Access-Control-Allow-Headers", "X-Requested-With,content-type,Authorization");
+    // res.setHeader();
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(200);
+    }
+    next();
 });
+const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+    plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+});
+await server.start();
+app.use("/", cors(), bodyParser.json(), expressMiddleware(server, {
+    context: async ({ req }) => ({
+        token: req.headers.authorization?.split(" ")[1] || "",
+    }),
+}));
+await new Promise((resolve) => httpServer.listen({ port: 4000 }, resolve));
+console.log("Server running on localhost:4000");
 //# sourceMappingURL=app.js.map
