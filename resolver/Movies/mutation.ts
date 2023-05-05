@@ -9,17 +9,35 @@ interface Movie {
   director_name: string;
   release_date: Date;
   review?: Review[];
+  user_id: number;
 }
 
 interface Review {}
 
-export const createMovie = async (params: any, { input }: any) => {
+interface Token {
+  token: string;
+}
+
+export const createMovie = async (
+  parent: any,
+  { input }: any,
+  context: Token
+) => {
+  console.log("hhhh");
   try {
-    const { movie_name, description, director_name, release_date }: Movie =
-      input;
+    console.log(context.token);
+    const verify = await hashService.verifyToken(context.token);
+    const {
+      movie_name,
+      description,
+      director_name,
+      user_id,
+      release_date,
+    }: Movie = input;
 
     const movie = await prisma.movie.create({
       data: {
+        user_id,
         movie_name,
         description,
         director_name,
@@ -28,56 +46,98 @@ export const createMovie = async (params: any, { input }: any) => {
     });
     return {
       message: "creation successful",
+      statusCode: 201,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.log(error);
+    return {
+      message: "something went wrong",
+      statusCode: error.extensions.code,
+      error: { message: error.message, code: error.extensions.code },
+    };
   }
 };
 
-export const removeMoview = async (parent: any, { movie_name }: any) => {
+export const removeMoview = async (
+  parent: any,
+  { input }: any,
+  context: Token
+) => {
   try {
-    console.log(movie_name);
-    const movie = await prisma.movie.findMany({
-      where: { movie_name },
-    });
-
-    const id = movie[0]?.id;
-
-    console.log(movie);
+    const verify = await hashService.verifyToken(context.token);
+    const { user_id, movie_id } = input;
+    console.log(user_id, movie_id);
     const deleteMovie = prisma.movie.deleteMany({
       where: {
-        movie_name: movie_name,
+        AND: [{ user_id: user_id }, { id: movie_id }],
       },
     });
     const deleteReviews = prisma.review.deleteMany({
       where: {
-        movie_id: id,
+        AND: [{ user_id: user_id }, { movie_id: movie_id }],
       },
     });
 
     const transaction = await prisma.$transaction([deleteReviews, deleteMovie]);
+    if (transaction[1].count === 0) {
+      throw new GraphQLError("Movie deletion unsuccessfull Try again", {
+        extensions: {
+          code: 404,
+          message: "Review deletion unsuccessfull Try agai",
+        },
+      });
+    }
 
     return {
       message: "Deletion succeded",
+      statusCode: 200,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.log(error);
+    return {
+      message: "something went wrong while deleting",
+      statusCode: error.extensions.code,
+      error: { message: error.message, code: error.extensions.code },
+    };
   }
 };
-export const updateMovie = async (parent: any, { input }: any) => {
+export const updateMovie = async (
+  parent: any,
+  { input }: any,
+  context: Token
+) => {
   try {
-    const { id, movie_name, description, release_date, director_name }: Movie =
-      input;
+    const verify = await hashService.verifyToken(context.token);
+    const {
+      id,
+      user_id,
+      movie_name,
+      description,
+      release_date,
+      director_name,
+    }: Movie = input;
     const updateMovie = await prisma.movie.updateMany({
-      where: { id },
+      where: { AND: [{ id: id }, { user_id: user_id }] },
       data: {
         movie_name,
         description,
         director_name,
-        release_date,
+        release_date: new Date(release_date),
+        user_id,
       },
     });
-  } catch (error) {
+
+    return {
+      message: "Updated successfully",
+      statusCode: 200,
+    };
+    console.log(updateMovie);
+  } catch (error: any) {
     console.log(error);
+    return {
+      message: "something went wrong while updating please try again",
+      error: { message: error.message, code: error.extensions.code },
+      statusCode: error.extensions.code,
+    };
   }
 };

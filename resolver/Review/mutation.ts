@@ -1,6 +1,6 @@
 import { PrismaClient, Prisma } from "@prisma/client";
-import { Decimal } from "@prisma/client/runtime";
-import exp from "constants";
+import { hashService } from "../../utils/auth.js";
+import { GraphQLError } from "graphql";
 const prisma = new PrismaClient();
 interface Review {
   id: number;
@@ -9,8 +9,17 @@ interface Review {
   rating: number;
   comment: string;
 }
-export const createReview = async (parent: any, { input }: any) => {
+
+interface Token {
+  token: string;
+}
+export const createReview = async (
+  parent: any,
+  { input }: any,
+  context: Token
+) => {
   try {
+    const verify = await hashService.verifyToken(context.token);
     const { movie_id, user_id, rating, comment }: Review = input;
     const createReview = await prisma.review.create({
       data: {
@@ -21,17 +30,27 @@ export const createReview = async (parent: any, { input }: any) => {
       },
     });
 
-    return { message: "Review posted" };
-  } catch (error) {
-    console.log(error);
+    return { message: "Review posted", statusCode: 200 };
+  } catch (error: any) {
+    return {
+      message: "something went wrong",
+      statusCode: error.extensions.code,
+      error: {
+        message: error.message,
+        code: error.extensions.code,
+      },
+    };
   }
 };
 
-export const updateReview = async (parent: any, { input }: any) => {
+export const updateReview = async (
+  parent: any,
+  { input }: any,
+  context: Token
+) => {
   try {
     const { id, user_id, movie_id, comment, rating }: Review = input;
-
-    console.log(input);
+    const verify = await hashService.verifyToken(context.token);
     const update = await prisma.review.updateMany({
       where: {
         AND: [
@@ -57,23 +76,50 @@ export const updateReview = async (parent: any, { input }: any) => {
 
     return {
       message: "Review updated",
+      statusCode: 200,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.log(error);
+    return {
+      message: "something went wrong while updating please try again",
+      error: { message: error.message, code: error.extensions.code },
+      statusCode: error.extensions.code,
+    };
   }
 };
 
-export const removeReview = async (parent: any, { review_id }: any) => {
+export const removeReview = async (
+  parent: any,
+  { input }: any,
+  context: Token
+) => {
   try {
+    const verify = await hashService.verifyToken(context.token);
+    const { review_id, user_id } = input;
     const review = await prisma.review.deleteMany({
       where: {
-        id: parseInt(review_id),
+        AND: [{ id: parseInt(review_id) }, { user_id: user_id }],
       },
     });
+    console.log(review);
+    if (review.count === 0) {
+      throw new GraphQLError("Review deletion unsuccessfull Try again", {
+        extensions: {
+          code: 404,
+          message: "Review deletion unsuccessfull Try agai",
+        },
+      });
+    }
     return {
       message: "Review deleted",
+      statusCode: 200,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.log(error);
+    return {
+      message: error.message,
+      error: { message: error.message, code: error.extensions.code },
+      statusCode: error.extensions.code,
+    };
   }
 };

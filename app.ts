@@ -11,7 +11,11 @@ import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHt
 import { GraphQLError, GraphQLFormattedError } from "graphql";
 import http from "http";
 import bodyParser from "body-parser";
+
 const app = express();
+app.use(
+  cors({ origin: true, preflightContinue: true, optionsSuccessStatus: 204 })
+);
 
 const httpServer = http.createServer(app);
 
@@ -22,20 +26,17 @@ interface MyContext {
 app.use(
   morgan(":method :url :status :response-time ms - :res[content-length]")
 );
-app.use(cors());
+
+console.log("ddh");
+
 app.use(express.json());
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "OPTIONS,GET,PUT,POST,DELETE");
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "X-Requested-With,content-type,Authorization"
-  );
+  res.setHeader("Access-Control-Allow-Methods", "*");
+  res.setHeader("Access-Control-Allow-Headers", "*");
   // res.setHeader();
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
+
   next();
 });
 
@@ -48,8 +49,11 @@ const server = new ApolloServer<MyContext>({
 await server.start();
 
 app.use(
-  "/",
-  cors<cors.CorsRequest>(),
+  "/graphql",
+  cors<cors.CorsRequest>({
+    origin: true,
+    credentials: true,
+  }),
   bodyParser.json(),
   expressMiddleware(server, {
     context: async ({ req }) => ({

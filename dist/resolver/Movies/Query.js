@@ -2,24 +2,34 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 export const getAllMovies = async (parent, { input }) => {
     try {
-        let { limit = 4, offset = 0 } = input;
+        let { limit = 4, offset = 0, sort = "asc" } = input;
         const max_limit = 4;
         limit = limit > max_limit ? max_limit : limit;
         const movies = await prisma.movie.findMany({
+            orderBy: [
+                {
+                    release_date: sort,
+                },
+            ],
             skip: offset,
             take: limit,
         });
-        console.log("sag");
-        console.log(movies);
         const pagination = {
             limit,
             offset,
         };
-        console.log(pagination);
-        return { movies, pagination };
+        return { movies, pagination, message: "success", statusCode: 200 };
     }
     catch (error) {
         console.log(error);
+        return {
+            message: "something went wrong",
+            statusCode: error.extensions.code,
+            error: {
+                message: error.message,
+                code: error.extensions.code,
+            },
+        };
     }
 };
 export const getMovie = async (parent, { input }) => {

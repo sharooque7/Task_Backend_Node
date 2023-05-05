@@ -12,7 +12,7 @@ export const typeDefs = `#graphql
     }
 
     type User {
-        _id:ID!
+        id:ID
         username:String!
         emailid:String!
         password:String
@@ -28,10 +28,20 @@ export const typeDefs = `#graphql
         password:String!
     }
 
+    type error {
+        message:String
+        code:Int
+    }
+
     type Response {
         message:String!
-        error: String
+        statusCode:Int!
+        error: error
         token:String
+        user:User
+        reviews:[review!]
+        pagination:page
+        movies:[movie!]
     }
    
     type movie {
@@ -47,19 +57,23 @@ export const typeDefs = `#graphql
         description:String!
         director_name:String!
         release_date:String
+        user_id:Int!
     }
 
     input updateInput {
-        id:ID!
+        id:Int!
         movie_name:String!
         description:String!
         director_name:String!
         release_date:String
+        user_id:Int!
     }
    
     input pagination {
         limit:Int!
         offset:Int!
+        sort:String
+        filter:String
     }
     type page {
         limit:String!
@@ -88,31 +102,43 @@ export const typeDefs = `#graphql
         comment:String!
     }
 
-    type getAllReviews {
-        reviews:[review!]!
-        pagination:page!
+    input removeMovieInput {
+        user_id:Int!
+        movie_id:Int!
+    }
+
+    input reviewQueryInput{
+        limit:Int!
+        offset:Int!
+        movie_id:Int!
+    }
+
+    input removeReviewInput {
+        user_id:Int!
+        review_id:Int!
     }
 
     type Query {
         hello:String!
-        getAllMovies(input:pagination):getAllMovies!
+        getAllMovies(input:pagination):Response!
         getMovie(input:ID!):movie!
-        getAllReviewOfMovie(movie_id:ID!):getAllReviews!
-        
+        getAllReviewOfMovie(input:reviewQueryInput!):Response!   
     }
+
+
 
     type Mutation {
         register(input:registerInput):Response!
         login(input:loginInput):Response!
         changePassword(email:String!):Response!
         createMovie(input:movieInput):Response!
-        removeMoview(movie_name:String!):Response!
+        removeMoview(input:removeMovieInput!):Response!
         updateMovie(input:updateInput!):Response!
         createReview(input:reviewInput!):Response!
         updateReview(input:reviewInput!):Response!
-        removeReview(review_id:ID!):Response!
+        removeReview(input:removeReviewInput!):Response!
         
-        test:String!
-    }
+        test:Response!
+    },
 `;
 //# sourceMappingURL=schema.js.map

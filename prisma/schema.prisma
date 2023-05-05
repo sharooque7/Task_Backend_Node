@@ -15,6 +15,7 @@ model User {
   user_name String
   email_id String @unique
   password String
+  movie Movie[]
   reviews Review[]
 
   @@index([email_id])
@@ -22,6 +23,8 @@ model User {
 
 model Movie {
   id Int @id @default(autoincrement())
+  user_id Int
+  user User @relation(fields: [user_id],references: [id])
   movie_name String
   description String
   director_name String
