@@ -6,6 +6,7 @@ export const createReview = async (parent, { input }, context) => {
     try {
         const verify = await hashService.verifyToken(context.token);
         const { movie_id, user_id, rating, comment } = input;
+        console.log(movie_id, user_id, comment, rating);
         const createReview = await prisma.review.create({
             data: {
                 movie_id,
@@ -17,6 +18,7 @@ export const createReview = async (parent, { input }, context) => {
         return { message: "Review posted", statusCode: 200 };
     }
     catch (error) {
+        console.log(error);
         return {
             message: "something went wrong",
             statusCode: error.extensions.code,
@@ -30,6 +32,7 @@ export const createReview = async (parent, { input }, context) => {
 export const updateReview = async (parent, { input }, context) => {
     try {
         const { id, user_id, movie_id, comment, rating } = input;
+        console.log(id, user_id, movie_id, comment, rating);
         const verify = await hashService.verifyToken(context.token);
         const update = await prisma.review.updateMany({
             where: {

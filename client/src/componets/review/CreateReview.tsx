@@ -1,21 +1,19 @@
 import * as React from "react";
-import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
 import TextField from "@mui/material/TextField";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Checkbox from "@mui/material/Checkbox";
 import Link from "@mui/material/Link";
-import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { useAppDispatch } from "../../app/store/configureStore";
-import { signInUser } from "../signin/loginSlice";
-import { Navigate, Link as Swap, useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../../app/store/configureStore";
+// import { useAppSelector } from "../../app/store/configureStore";
+import { createMovieAsync } from "../movie/movieSlice";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { stat } from "fs";
+import { createReview, getAllReview } from "./reviewSlice";
 
 function Copyright(props: any) {
   return (
@@ -37,24 +35,54 @@ function Copyright(props: any) {
 
 const theme = createTheme();
 
-export default function SignIn() {
+export default function CreateReview() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const { state } = useLocation();
+  console.log(state.movie_id);
+  const { pagination }: any = useAppSelector((state) => state?.movies);
+  const limit: number = pagination && pagination.limit;
+  const offset: number = pagination && pagination.offset;
+  const count: number = pagination && pagination.count;
+  const pageSize = limit;
+  const totalPage = count / pageSize;
+  const [curr, setCurr] = React.useState(1);
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    const user = { email: data.get("email"), password: data.get("password") };
 
     try {
-      const response: any = await dispatch(signInUser(data));
-      if (response.payload.data.login.statusCode === 200) {
-        toast.success(response.payload.data.login.message);
+      let current = (curr - 1) * pageSize;
+
+      const user: any = localStorage.getItem("user");
+      const userData = JSON.parse(user);
+      const id = userData.data.login.user.id;
+
+      const review: any = {
+        comment: data.get("comment"),
+        rating: data.get("rating"),
+        user_id: parseInt(id),
+        movie_id: state.movie_id,
+      };
+
+      const response: any = await dispatch(createReview(review));
+
+      await dispatch(
+        getAllReview({
+          limit: pageSize,
+          offset: current,
+          movie_id: state.movie_id,
+        })
+      );
+      console.log(response);
+      if (response.payload.data.createReview.statusCode === 200) {
+        toast.success(response.payload.data.createReview.message);
         navigate("/movies");
       }
-      if (response.payload.data.login.statusCode !== 200) {
+      if (response.payload.data.createReview.statusCode !== 200) {
         throw {
-          message: response.payload.data.login.message,
-          code: response.payload.data.login.statusCode,
+          message: response.payload.data.createReview.message,
+          code: response.payload.data.createReview.statusCode,
         };
       }
     } catch (error: any) {
@@ -75,11 +103,8 @@ export default function SignIn() {
             alignItems: "center",
           }}
         >
-          <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
-            <LockOutlinedIcon />
-          </Avatar>
           <Typography component="h1" variant="h5">
-            Sign in
+            Create Review
           </Typography>
           <Box
             component="form"
@@ -91,42 +116,30 @@ export default function SignIn() {
               margin="normal"
               required
               fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoComplete="email"
+              id="comment"
+              label="Comment"
+              name="comment"
+              autoComplete="comment"
               autoFocus
             />
             <TextField
               margin="normal"
               required
               fullWidth
-              name="password"
-              label="Password"
-              type="password"
-              id="password"
-              autoComplete="current-password"
+              name="rating"
+              label="rating"
+              id="rating"
+              autoComplete="rating"
             />
+
             <Button
               type="submit"
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
             >
-              Sign In
+              Create
             </Button>
-            <Grid container>
-              <Grid item xs>
-                <Link href="#" variant="body2">
-                  Forgot password?
-                </Link>
-              </Grid>
-              <Grid item>
-                <Swap to="/register">
-                  <Link>{"Don't have an account? Sign Up"}</Link>
-                </Swap>
-              </Grid>
-            </Grid>
           </Box>
         </Box>
         <Copyright sx={{ mt: 8, mb: 4 }} />

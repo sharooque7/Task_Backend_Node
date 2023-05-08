@@ -1,6 +1,7 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import { hashService } from "../../utils/auth.js";
 import { GraphQLError } from "graphql";
+import { reverse } from "dns";
 const prisma = new PrismaClient();
 interface Review {
   id: number;
@@ -21,6 +22,7 @@ export const createReview = async (
   try {
     const verify = await hashService.verifyToken(context.token);
     const { movie_id, user_id, rating, comment }: Review = input;
+    console.log(movie_id, user_id, comment, rating);
     const createReview = await prisma.review.create({
       data: {
         movie_id,
@@ -32,6 +34,7 @@ export const createReview = async (
 
     return { message: "Review posted", statusCode: 200 };
   } catch (error: any) {
+    console.log(error);
     return {
       message: "something went wrong",
       statusCode: error.extensions.code,
@@ -50,6 +53,7 @@ export const updateReview = async (
 ) => {
   try {
     const { id, user_id, movie_id, comment, rating }: Review = input;
+    console.log(id, user_id, movie_id, comment, rating);
     const verify = await hashService.verifyToken(context.token);
     const update = await prisma.review.updateMany({
       where: {

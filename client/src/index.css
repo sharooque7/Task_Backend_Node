@@ -12,4 +12,10 @@ html {
 
 body {
   box-sizing: border-box;
+  display: flex;
+  background-color: rgb(246, 240, 240) !important;
+}
+
+#root {
+  width: 100%;
 }

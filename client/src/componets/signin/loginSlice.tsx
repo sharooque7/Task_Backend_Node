@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 // import { router } from "../../app/router/route";
 import { User } from "../../app/model/user";
 import agent from "../../app/api/agent";
+import { useNavigate } from "react-router-dom";
 
 interface UserState {
   user: User | null;
@@ -13,7 +14,7 @@ const initialState: UserState = {
 };
 
 export const signInUser = createAsyncThunk<User, FormData>(
-  "/",
+  "signInUser",
   async (data, thunkAPI) => {
     try {
       const userdata = {
@@ -32,18 +33,19 @@ mutation {
     }
     statusCode
     error {
-      code
+      statusCode
       message
     }
   }
 }`,
       };
-      const user = await agent.singlepoint.api(graphqlQuery);
+      const user: any = await agent.singlepoint.api(graphqlQuery);
       localStorage.setItem("user", JSON.stringify(user));
       console.log(user);
       return user;
     } catch (error: any) {
-      return thunkAPI.rejectWithValue({ error: error.data });
+      console.log(error);
+      return thunkAPI.rejectWithValue({ error: error });
     }
   }
 );
@@ -63,8 +65,9 @@ export const loginSlice = createSlice({
   },
 
   extraReducers: (builder) => {
-    builder.addMatcher(isAnyOf(signInUser.fulfilled), (state, action) => {
-      state.user = action.payload;
+    builder.addMatcher(isAnyOf(signInUser.fulfilled), (state, action: any) => {
+      console.log(action.payload.data.login);
+      state.user = action.payload.data.login;
     });
     builder.addMatcher(isAnyOf(signInUser.rejected), (state, action) => {
       throw action.payload;

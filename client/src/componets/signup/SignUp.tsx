@@ -10,13 +10,15 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-
+import agent from "../../app/api/agent";
+import { useNavigate, Link as Swap } from "react-router-dom";
+import { toast } from "react-toastify";
 
 function Copyright(props: any) {
   return (
     <Typography
       variant="body2"
-      color="text.secondary"
+      color="texaction.payload.data.getAllMovies.moviesaction.payload.data.getAllMovies.moviest.secondary"
       align="center"
       {...props}
     >
@@ -33,14 +35,45 @@ function Copyright(props: any) {
 const theme = createTheme();
 
 export default function SignUp() {
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const navigate = useNavigate();
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
+    const userdata = {
       user_name: data.get("user_name"),
-      email_id: data.get("email_id"),
+      email: data.get("email_id"),
       password: data.get("password"),
-    });
+    };
+
+    const graphqlQuery = {
+      query: `
+mutation {
+  register(input:{name:"${userdata.user_name}",email:"${userdata.email}",password:"${userdata.password}"}) {
+    message
+    statusCode
+    error {
+      code
+      message
+    }
+  }
+}`,
+    };
+    try {
+      const user = await agent.singlepoint.api(graphqlQuery);
+
+      if (user.data.register.statusCode !== 200) {
+        throw {
+          message: user.data.register.message,
+          code: user.data.register.statusCode,
+        };
+      }
+      if (user.data.register.statusCode === 200) {
+        toast.success(user.data.register.message);
+        navigate("/login");
+      }
+    } catch (error: any) {
+      toast.error(error.message);
+    }
   };
 
   return (
@@ -111,9 +144,10 @@ export default function SignUp() {
             </Button>
             <Grid container justifyContent="flex-end">
               <Grid item>
-                <Link href="#" variant="body2">
-                  Already have an account? Sign in
-                </Link>
+                <Link href="#" variant="body2"></Link>
+                <Swap to="/login">
+                  <Link>{"Already have an account? Sign in"}</Link>
+                </Swap>
               </Grid>
             </Grid>
           </Box>

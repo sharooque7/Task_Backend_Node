@@ -2,6 +2,7 @@ import validator from "validator";
 import { hashService } from "../../utils/auth.js";
 import { GraphQLError } from "graphql";
 import { PrismaClient, Prisma } from "@prisma/client";
+
 const prisma = new PrismaClient();
 
 interface user {

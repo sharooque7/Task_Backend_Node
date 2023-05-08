@@ -3,14 +3,13 @@ import { GraphQLError } from "graphql";
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 export const createMovie = async (parent, { input }, context) => {
-    console.log("hhhh");
     try {
-        console.log(context.token);
         const verify = await hashService.verifyToken(context.token);
         const { movie_name, description, director_name, user_id, release_date, } = input;
+        console.log(movie_name, description, director_name, user_id, release_date);
         const movie = await prisma.movie.create({
             data: {
-                user_id,
+                user_id: parseInt(user_id),
                 movie_name,
                 description,
                 director_name,
@@ -38,15 +37,16 @@ export const removeMoview = async (parent, { input }, context) => {
         console.log(user_id, movie_id);
         const deleteMovie = prisma.movie.deleteMany({
             where: {
-                AND: [{ user_id: user_id }, { id: movie_id }],
+                AND: [{ user_id: parseInt(user_id) }, { id: parseInt(movie_id) }],
             },
         });
         const deleteReviews = prisma.review.deleteMany({
             where: {
-                AND: [{ user_id: user_id }, { movie_id: movie_id }],
+                AND: [{ user_id: parseInt(user_id) }, { movie_id: parseInt(movie_id) }],
             },
         });
         const transaction = await prisma.$transaction([deleteReviews, deleteMovie]);
+        console.log(transaction);
         if (transaction[1].count === 0) {
             throw new GraphQLError("Movie deletion unsuccessfull Try again", {
                 extensions: {
@@ -74,20 +74,20 @@ export const updateMovie = async (parent, { input }, context) => {
         const verify = await hashService.verifyToken(context.token);
         const { id, user_id, movie_name, description, release_date, director_name, } = input;
         const updateMovie = await prisma.movie.updateMany({
-            where: { AND: [{ id: id }, { user_id: user_id }] },
+            where: { AND: [{ id: parseInt(id) }, { user_id: parseInt(user_id) }] },
             data: {
                 movie_name,
                 description,
                 director_name,
                 release_date: new Date(release_date),
-                user_id,
+                user_id: parseInt(user_id),
             },
         });
+        console.log(updateMovie);
         return {
             message: "Updated successfully",
             statusCode: 200,
         };
-        console.log(updateMovie);
     }
     catch (error) {
         console.log(error);

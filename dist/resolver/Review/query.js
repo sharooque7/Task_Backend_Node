@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 export const getAllReviewOfMovie = async (parent, { input }) => {
     try {
-        let { limit = 4, offset = 0, movie_id } = input;
+        let { limit = 4, sort = "desc", offset = 0, movie_id } = input;
         const max_limit = 4;
         limit = limit > max_limit ? max_limit : limit;
         const movie = await prisma.movie.findUnique({
@@ -23,9 +23,16 @@ export const getAllReviewOfMovie = async (parent, { input }) => {
             skip: offset,
             take: limit,
         });
+        const count = await prisma.review.count({
+            where: {
+                movie_id: movie_id,
+            },
+        });
         const pagination = {
             limit,
             offset,
+            count,
+            sort,
         };
         return { reviews, pagination, statusCode: 200, message: "success" };
     }

@@ -30,7 +30,7 @@ export const typeDefs = `#graphql
 
     type error {
         message:String
-        code:Int
+        statusCode:Int
     }
 
     type Response {
@@ -50,6 +50,7 @@ export const typeDefs = `#graphql
         description:String!
         director_name:String!
         release_date:String
+        user_id:ID!
     }
 
     input movieInput {
@@ -57,27 +58,32 @@ export const typeDefs = `#graphql
         description:String!
         director_name:String!
         release_date:String
-        user_id:Int!
+        user_id:String!
     }
 
     input updateInput {
-        id:Int!
+        id:String!
         movie_name:String!
         description:String!
         director_name:String!
         release_date:String
-        user_id:Int!
+        user_id:String!
     }
+
    
     input pagination {
-        limit:Int!
-        offset:Int!
-        sort:String
-        filter:String
-    }
-    type page {
         limit:String!
         offset:String!
+        sort:String
+        filter:String
+        count:Int
+    }
+    type page {
+        limit:Int!
+        offset:Int!
+        sort:String!
+        filter:String
+        count:Int
     }
 
     type getAllMovies {
@@ -103,8 +109,8 @@ export const typeDefs = `#graphql
     }
 
     input removeMovieInput {
-        user_id:Int!
-        movie_id:Int!
+        user_id:String!
+        movie_id:String!
     }
 
     input reviewQueryInput{

@@ -1,6 +1,5 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { toast } from "react-toastify";
-import { store } from "../store/configureStore";
 
 axios.defaults.baseURL = process.env.REACT_APP_API_URL;
 axios.defaults.withCredentials = true;
@@ -8,7 +7,10 @@ axios.defaults.withCredentials = true;
 const responseBody = (response: AxiosResponse) => response.data;
 
 axios.interceptors.request.use((config) => {
-  const token = store.getState().login?.user?.token;
+  const user: any = localStorage.getItem("user");
+  const userData = JSON.parse(user);
+  const token = userData.data.login.token;
+  console.log(token);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
     config.headers["Content-Type"] = "application/json";
@@ -18,7 +20,7 @@ axios.interceptors.request.use((config) => {
 
 axios.interceptors.response.use(
   async (response) => {
- it    return response;
+    return response;
   },
   (error: AxiosError) => {
     console.log(error);
